@@ -1,8 +1,9 @@
-
 C++ language
 QWERTY
 Only letters can be used
 State can be changed between binary, char, and int
+Maybe add customizable key mapping 
+Add interpreter function
 
 o - output current cell
 i- input current cell
@@ -13,7 +14,8 @@ n - integer mode
 
 E - begin loop
 (If followed by a ‘q’ run till cell is 0
-If followed by a ‘d’ run the cell’s value # times
+If followed by a ‘t’ run the cell’s value # times
+(Runs n time’s absolutely, regardless of pointer location)
 L - close loop
 
 A- move left
@@ -22,4 +24,14 @@ W - move up
 S - move down 
 
 v - decrement 
-y - increment
+U- increment
+
+F- And cell and cell to right -> cell to left
+R - Or cell and cell to left -> cell to left
+J - invert cell
+
+X-write column number
+Y- write row number 
+
+G - go to current cell # column
+H - go to current cell # row

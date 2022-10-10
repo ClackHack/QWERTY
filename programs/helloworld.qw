@@ -1,0 +1,46 @@
+;generate h
+UUUUU UUUU
+;put H in cell above
+ET W UUUUU UUU S L
+;Write H 
+W O S
+; Write E
+D UUUUU UUUUU
+ET W UUUUU UUUUU S L 
+W U O S
+;Write L
+D UUUUU UUUUU
+ET W UUUUU UUUUU S L W UUUUU UUU OO S
+
+
+;Write O
+W
+UUU O
+S
+
+;Write Space
+D UUUU
+ET W UUUUU UUU S L W O L
+
+;Write W
+D 
+UUUUU UUUU
+ET W UUUUU UUUUU S L W VVV O S
+
+;Write o 
+D UUUUU UUUUU U
+ET W UUUUU UUUUU S L W U O S
+
+;Write r
+W UUU O S
+
+;Write l 
+W VVV VVV O S
+
+;Write d 
+W VVVVV VVV O S 
+
+; Write ! 
+D UUUUU UUU 
+ET W UUUU S  L W U O 
+W UUUUU UUUUU O
