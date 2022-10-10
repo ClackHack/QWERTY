@@ -2,10 +2,11 @@
 #include <fstream>
 #include <cstdlib>
 #include <string>
+#include <iomanip>
 
 using namespace std;
 
-fstream File;
+ifstream File;
 
 const char TT_OUTPUT     ='O';
 const char TT_INPUT      ='I';
@@ -30,11 +31,14 @@ const char TT_DECREMENT  ='V';
 const char TT_AND        ='F';
 const char TT_OR         ='R';
 const char TT_INVERT     ='J';
+const char TT_EQ         ='K';
+const char TT_LT         ='P';
 
 const char TT_COLUMN     ='X';
 const char TT_ROW=        'Y';
 const char TT_GOTO_COL   ='G';
 const char TT_GOTO_ROW   ='H';
+const char TT_DEBUG      ='Z';
 
 int Row=0;
 int Col=0;
@@ -55,13 +59,25 @@ void UpdateMemory(int r, int c, int value);
 void HandleCharacter(char c);
 
 int main(int argc, char *argv[]){
-    if (argc != 2){
+    if (argc < 2){
         Error("Expected file path argument");
     }
-    if (argv[1]=="-i"){
+    //cout <<"Start";
+    //cout << argv[1];
+    string arg1 = argv[1];
+    if (arg1 ==  "i"){
+       // cout << "REPL";
         REPL();
+        File.close();
+        exit(0);
     }
+    
     File.open(argv[1]);
+    if (File.fail()){
+        cout << "Cannot Locate File Specified...\n";
+        File.close();
+        exit(1);
+    }
 
     //dump file contents to string
     string fileContents="";
@@ -75,6 +91,13 @@ int main(int argc, char *argv[]){
     cout << "Beginning Execution...\n\n";
 
     Execute(fileContents);
+    //cout << "V: " << Row << " " << Col << endl;
+    if (argc==3){
+        string arg2 = argv[2];
+        if (arg2=="i"){
+            REPL();
+        }
+    }
 
     return 0;
 }
@@ -87,14 +110,18 @@ void Error(string msg){
 void Execute(string raw){
     //cout << "EXECUTING " << raw << endl;
     for (int i=0; i<raw.length(); i++){
-        //cout << "EXL > " << i << " : " << raw.at(i) <<  endl;
+        //cout << "EXL > " << i << " : " << raw.at(i)<<   endl;
         switch (raw.at(i)){
             case ';':
                 //cout << "Comment\n";
                 while (raw.at(i)!='\n'){
+                    //cout << "C : " << i << " " << raw.length() << endl;
                     //cout << "-"<< raw.at(i);
                     i++;
+                    if (i >= raw.length())
+                        break;
                 }
+                //cout << "CF : " << i << " " << raw.length() << endl;
                 break;
             case ' ' :
             case '\t':
@@ -128,9 +155,10 @@ void Execute(string raw){
                         depth++;
                     subraw+=raw.at(i);
                 }
-                //cout << "Entering loop subraw : " << subraw << endl;
+                //cout << "Entering loop subraw : " << subraw << " : " << Row << " " << Col << endl;
                 if (runTo0){
-                    while (AccessMemory(Row,Col)){
+
+                    while ((bool) AccessMemory(Row,Col)){
                         Execute(subraw);
                     }
                 }
@@ -152,12 +180,27 @@ void Execute(string raw){
     }
 }
 void REPL(){
+    //cout << "Entering REPL...\n\nEnter '!' to exit\n\n";
+    string line;
+    
+    while (true){
+        //cout << "V: " << Row << " " << Col << endl;
+        cout <<setfill('0');
+        cout << "QW ("<<setw(4)<< Row<<", "<<setw(4)<<Col<<"): > " << setw(0);
+        cout << setfill(' ');
+        getline(cin,line);
+        if (line == "!")
+            break;
+        Execute(line);
+    }
+    cout << "\nClosing REPL...\n";
 
 }
 
 void HandleCharacter(char c){
     switch (c){
         case TT_OUTPUT:
+            //cout << "VOut: " << Row << " " << Col << endl;
             //cout << "O: " << AccessMemory(Row,Col) << endl;
             if (MemoryMode==0){
                 //Character Mode
@@ -180,9 +223,26 @@ void HandleCharacter(char c){
             break;
         case TT_INPUT:
             //cout << "I\n";
-            char tmp;
-            cin >> tmp;
-            UpdateMemory(Row,Col,tmp);
+            if (MemoryMode==0){
+                //Char mode
+                char tmp;
+                cin >> tmp;
+                UpdateMemory(Row,Col,tmp);
+            }
+            else if (MemoryMode==1){
+                //integer mode
+                int tmp;
+                cin >> tmp;
+                UpdateMemory(Row,Col,tmp);
+
+            }
+            else if (MemoryMode==2){
+                //integer mode
+                bool tmp;
+                cin >> tmp;
+                UpdateMemory(Row,Col,tmp);
+
+            }
             break;
         
         case TT_CHAR:
@@ -202,30 +262,43 @@ void HandleCharacter(char c){
             Col++;
             break;
         case TT_MDOWN:
-            Row++;
+            Row--;
             break;
         case TT_MUP:
-            Row--;
+            Row++;
             break;
         
         case TT_DECREMENT:
             UpdateMemory(Row,Col,false);
             break;
         case TT_INCREMENT:
-            UpdateMemory(Row,Col);
+           // cout << "INC : " << Row << " " << Col << endl;
+            UpdateMemory(Row,Col,true);
+            //cout << "Ac " << AccessMemory(0, 0) << endl;
             break;
+
         case TT_AND:
             //AND between current cell and cell to right -> cell to left
-            UpdateMemory(Row,Col-1,(AccessMemory(Row,Col) && AccessMemory(Row, Col + 1)));
+            //cout << "MEM " << AccessMemory(Row, Col) << endl;
+            //cout << ((bool) AccessMemory(Row,Col) && (bool) AccessMemory(Row, Col + 1)) << endl;
+            UpdateMemory(Row,Col-1,(int) ((bool) AccessMemory(Row,Col) && (bool) AccessMemory(Row, Col + 1)));
             break;
         case TT_OR:
             //OR between current cell and cell to right -> cell to left
-            UpdateMemory(Row,Col-1,(AccessMemory(Row,Col) || AccessMemory(Row, Col + 1)));
+            UpdateMemory(Row,Col-1,(int)((bool)AccessMemory(Row,Col) || (bool) AccessMemory(Row, Col + 1)));
             break;
         case TT_INVERT:
             //INVERT Cell
             UpdateMemory(Row,Col,!(AccessMemory(Row,Col)));
             break;
+        case TT_EQ:
+            //cout << "EQ " << (int)((bool)(AccessMemory(Row,Col) ==  AccessMemory(Row, Col + 1)));
+            UpdateMemory(Row,Col-1,(int)((bool)(AccessMemory(Row,Col) ==  AccessMemory(Row, Col + 1))));
+            break;
+        case TT_LT:
+            UpdateMemory(Row,Col-1,(int)((bool)(AccessMemory(Row,Col) <  AccessMemory(Row, Col + 1))));
+            break;
+
 
         case TT_COLUMN:
             UpdateMemory(Row,Col,Col);
@@ -239,6 +312,16 @@ void HandleCharacter(char c){
         case TT_GOTO_ROW:
             Row = AccessMemory(Row,Col);
             break;
+        case TT_DEBUG:
+            cout << "DBG\n";
+            cout << "   ";
+            cout << setw(5);
+            cout << "R"<< setw(5) << "C"<< setw(5) <<  "V" << endl;
+            for (int i=0;i<MemoryPointer+1;i++){
+                cout << "|> " << setw(5) << CellGrid[i][0] << " " << setw(5)<< CellGrid[i][1] 
+                << " "<< setw(5) << CellGrid[i][2] << endl; 
+            }
+            break;
             
 
     }
@@ -246,7 +329,7 @@ void HandleCharacter(char c){
 
 int AccessMemory(int r, int c){
     //return 53;
-    for (int i=0; i<MEMORY_SIZE;i++){
+    for (int i=0; i<MemoryPointer+1;i++){
         if (CellGrid[i][0]==r && CellGrid[i][1]==c){
             return CellGrid[i][2];
         }
@@ -254,12 +337,14 @@ int AccessMemory(int r, int c){
     return 0;
 }
 void UpdateMemory(int r, int c, bool increment){
+    //cout << "Bool Up\n";
     bool found = false;
     //cout << "I : " << c << " " << r << "\n";
-    for (int i=0; i<MEMORY_SIZE;i++){
+    for (int i=0; i<MemoryPointer+1;i++){
         if (CellGrid[i][0]==r && CellGrid[i][1]==c){
             if (increment){
                 CellGrid[i][2]++;
+                //cout << "ININC> " << r << " " << c << endl;
                 
             }
             else {
@@ -271,17 +356,19 @@ void UpdateMemory(int r, int c, bool increment){
         }
     }
     if (!found){
+        MemoryPointer++;
         int value = increment * 2 - 1;
+        //cout << "MAKENEW " << value << " " << r << " " << c << endl ;
         CellGrid[MemoryPointer][0]=r;
         CellGrid[MemoryPointer][1]=c;
         CellGrid[MemoryPointer][2]=value;
-        MemoryPointer++;
+        
     }
 
 }
 void UpdateMemory(int r, int c, int value){
     bool found = false;
-    for (int i=0; i<MEMORY_SIZE;i++){
+    for (int i=0; i<MemoryPointer+1;i++){
         if (CellGrid[i][0]==r && CellGrid[i][1]==c){
             CellGrid[i][2]=value;
             found=true;
